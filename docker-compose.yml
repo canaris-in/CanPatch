@@ -1,8 +1,8 @@
 version: '3'
 networks:
-  canpatch:
-    driver: bridge
-
+  canpatch_network:
+    external: true
+      
 services:
   rabbitmq:
     image: 'rabbitmq:3-alpine'
@@ -12,7 +12,7 @@ services:
     expose:
       - '5672'
     networks: 
-      - canpatch
+      - canpatch_network
 
   db:
     image: 'postgres:11-alpine'
@@ -27,7 +27,7 @@ services:
     volumes:
       - './var/db/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql'
     networks: 
-      - canpatch
+      - canpatch_network
 
   web:
     container_name: patrowlmanager-django
@@ -49,7 +49,7 @@ services:
       - db
       - rabbitmq
     networks: 
-      - canpatch
+      - canpatch_network
 
   nginx:
     image: 'nginx:stable-alpine'
@@ -63,4 +63,4 @@ services:
     depends_on:
       - web
     networks: 
-      - canpatch
+      - canpatch_network
