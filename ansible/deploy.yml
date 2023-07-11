@@ -1,11 +1,14 @@
 ---
 - name: Deploy Docker
   hosts: awsinstances
-  become: true
   gather_facts: true
-
+  vars_files:
+    - vars/common.yml
+    - vars/canpatchmanager.yml
+    - vars/canpatchscanengines.yml
   tasks:
     - name: Install required packages
+      become: true
       ansible.builtin.apt:
         name:
           - apt-transport-https
@@ -16,31 +19,118 @@
         state: present
 
     - name: Add Docker's official GPG key
+      become: true
       ansible.builtin.apt_key:
         url: https://download.docker.com/linux/ubuntu/gpg
         state: present
 
     - name: Add Docker repository
+      become: true
       ansible.builtin.apt_repository:
         repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
         state: present
 
     - name: Update apt package cache
+      become: true
       ansible.builtin.apt:
         update_cache: true
 
     - name: Install Docker
+      become: true
       ansible.builtin.apt:
         name: docker-ce
         state: present
 
     - name: Install Docker Compose
+      become: true
       ansible.builtin.apt:
         name: docker-compose
         state: present
 
+    - name: Clone CanPatchManger Repository
+      ansible.builtin.git:
+        repo: "{{ canpatchmanager.git_repo }}"
+        dest: "/home/{{ ansible_user }}/{{ canpatchmanager.project_dir }}"
+        clone: true
+        version: "{{ canpatchmanager.git_branch }}"
+        single_branch: true
+
+    - name: Clone CanPatchScanEngines Repository
+      ansible.builtin.git:
+        repo: "{{ canpatchscanengines.git_repo }}"
+        dest: "/home/{{ ansible_user }}/{{ canpatchscanengines.project_dir }}"
+        clone: true
+        version: "{{ canpatchscanengines.git_branch }}"
+        single_branch: true
+
+    - name: Create docker daemon config
+      become: true
+      ansible.builtin.copy:
+        src: "/home/{{ ansible_user }}/{{ canpatchmanager.project_dir }}/ansible/files/docker/daemon.json"
+        dest: "/etc/docker/daemon.json"
+        mode: '0644'
+        remote_src: true
+
     - name: Start Docker service
+      become: true
       ansible.builtin.service:
         name: docker
+        daemon_reload: true
         state: started
         enabled: true
+
+    - name: Create Env file
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/templates/env.j2"
+        dest: "/home/{{ ansible_user }}/{{ canpatchmanager.project_dir }}/.env"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0755'
+
+
+    - name: Create Scan engines json files
+      ansible.builtin.copy:
+        src: "/home/{{ ansible_user }}/{{ canpatchscanengines.project_dir }}/engines/{{ item }}.sample"
+        dest: "/home/{{ ansible_user }}/{{ canpatchscanengines.project_dir }}/engines/{{ item }}"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0755'
+        remote_src: true
+      with_items: "{{ canpatchscanengines.engines_enabled }}"
+
+    - name: Create CanPatch network
+      community.docker.docker_network:
+        name: "{{ canpatchmanager.docker_network }}"
+
+    - name: Create and start CanPatchManger services
+      become: true
+      community.docker.docker_compose:
+        project_src: "/home/{{ ansible_user }}/{{ canpatchmanager.project_dir }}"
+        remove_orphans: true
+        restarted: true
+        state: present
+      register: output
+
+    - name: Show results
+      become: true
+      ansible.builtin.debug:
+        var: output
+
+    - name: Tear down existing CanPatchScanEngines services
+      community.docker.docker_compose:
+        project_src: "/home/{{ ansible_user }}/{{ canpatchscanengines.project_dir }}"
+        state: absent
+
+    - name: Create and start CanPatchScanEngines services
+      become: true
+      community.docker.docker_compose:
+        project_src: "/home/{{ ansible_user }}/{{ canpatchscanengines.project_dir }}"
+        remove_orphans: true
+        restarted: true
+        state: present
+      register: output
+
+    - name: Show results
+      become: true
+      ansible.builtin.debug:
+        var: output

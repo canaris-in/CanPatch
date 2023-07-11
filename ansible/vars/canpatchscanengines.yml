@@ -1,0 +1,11 @@
+---
+canpatchscanengines:
+  project_dir: canpatchscanengines
+  git_repo: git@github.com:canaris-in/canpatch-scan-engines.git
+  git_branch: develop
+  engines_enabled: 
+    - wpscan/wpscan.json
+    - nmap/nmap.json
+    - owl_leaks/owl_leaks.json
+    - openvas/openvas.json
+    - openvas/openvas-noexe.json

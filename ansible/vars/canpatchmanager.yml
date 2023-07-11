@@ -1,0 +1,8 @@
+---
+canpatchmanager:
+  project_dir: canpatchmanager
+  git_repo: git@github.com:canaris-in/CanPatch.git
+  git_branch: develop
+  version: latest
+  forward_web_port: 80
+  docker_network: canpatch_network
