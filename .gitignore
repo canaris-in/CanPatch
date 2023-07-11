@@ -25,3 +25,5 @@ docker-entrypoint.cloud.sh*
 pro
 env3pro/
 .env-*
+
+.env
