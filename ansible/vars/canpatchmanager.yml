@@ -6,3 +6,7 @@ canpatchmanager:
   version: latest
   forward_web_port: 80
   docker_network: canpatch_network
+  timezone: Asia/Kolkata
+  email: 
+    host: 
+    port: 
