@@ -3,9 +3,9 @@
 ## Requirements
 - Pyhton >= 3.10
 - Ansible >= 2.15
-- SSH access to remote machine
+- SSH access to remote machine (For setup on remote machines only.)
 
-# Setup on Remote Machine
+## Setup on Remote Machine
 
 1. Copy your ssh public key to remote server and add it to authorized keys
 2. Run `ssh -T <ssh_user>@<ssh_host>` from your local machine to authenticate your machine with the remote      machine. 
@@ -37,7 +37,7 @@
     **Note:- Replace <remote_machine_sudo_password> with the password of the sudo user in the remote machine**
 
 
-# Setup on Local Machine
+## Setup on Local Machine
 
 1. Clone this repository into your local machine
   ```bash
