@@ -2,14 +2,11 @@
 canpatchmanager:
   debug: True
   project_dir: canpatchmanager
-  git_repo: git@github.com:canaris-in/CanPatch.git
-  git_branch: develop
-  version: latest
-  forward_web_port: 80
+  forward_web_port: 8083
   docker_network: canpatch_network
   timezone: Asia/Kolkata
   email: 
-    host: 192.168.1.21
+    host: 192.168.1.13
     user: ''
     password: ''
     port: 1025

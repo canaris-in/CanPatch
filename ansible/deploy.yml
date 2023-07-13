@@ -1,12 +1,26 @@
 ---
 - name: Deploy Docker
-  hosts: awsinstances
+  hosts: awsinstances:testservers
   gather_facts: true
   vars_files:
     - vars/common.yml
     - vars/canpatchmanager.yml
     - vars/canpatchscanengines.yml
   tasks:
+    - name: Include host vars
+      delegate_to: localhost
+      ansible.builtin.include_vars:
+        file: "host_vars/{{ inventory_hostname }}.yml"
+        name: host_vars
+      failed_when: false
+
+    - name: Merge configurations
+      ansible.builtin.set_fact:
+        canpatchmanager: "{{ canpatchmanager \
+          | combine(host_vars.canpatchmanager | default({}), recursive=true) }}"
+        canpatchscanengines: "{{ canpatchscanengines \
+          | combine(host_vars.canpatchscanengines | default({}), recursive=true) }}"
+
     - name: Install required packages
       become: true
       ansible.builtin.apt:
@@ -40,6 +54,17 @@
       ansible.builtin.apt:
         name: docker-ce
         state: present
+
+    - name: Create "docker" group
+      ansible.builtin.group:
+        name: docker
+        state: present
+
+    - name: Add remote user to "docker" group
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: true
 
     - name: Install Docker Compose
       become: true
@@ -99,6 +124,7 @@
       with_items: "{{ canpatchscanengines.engines_enabled }}"
 
     - name: Create CanPatch network
+      become: true
       community.docker.docker_network:
         name: "{{ canpatchmanager.docker_network }}"
 
@@ -117,6 +143,7 @@
         var: output
 
     - name: Tear down existing CanPatchScanEngines services
+      become: true
       community.docker.docker_compose:
         project_src: "/home/{{ ansible_user }}/{{ canpatchscanengines.project_dir }}"
         state: absent
